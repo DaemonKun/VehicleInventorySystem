@@ -20,6 +20,8 @@ void mainMenu(void);
 void list(void);
 void add(void);
 void search(void);
+void modify(void); //unimplemented
+void delete(void; //unimplemented
 void clearscr(void);
 void getVal(char dest[]);
 void backToMenu(void);
