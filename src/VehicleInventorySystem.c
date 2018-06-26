@@ -15,18 +15,22 @@ struct vehicle{
 
 };
 
+
 FILE* open(char param);
 void mainMenu(void);
 void list(void);
 void add(void);
-void search(void);
+
 void modify(void); //unimplemented
-void delete(void; //unimplemented
+void delete(void); //unimplemented
 void clearscr(void);
 void getVal(char dest[]);
 void backToMenu(void);
 char* strupr(char* s);
 int getMaxLot();
+void printSrch(char buff[], int numSrch);
+void searchMenu();
+void search(char lineSrch[],char *buff, int numSrch, int cri);
 
 int main(void) {
 	mainMenu();
@@ -58,7 +62,7 @@ void mainMenu(void){
 	switch(option){
 	case 1:
 		clearscr();
-		search();
+		searchMenu();
 		break;
 	case 2:
 		clearscr();
@@ -200,11 +204,13 @@ void add(void){
 
 }
 
-void search(){
+void searchMenu(){
+
+	int cri = 0,numSrch = 0;;
+	int maxLot = getMaxLot();
 	char criteria[2];
 	char lineSrch[MAXLINE];
-	int cri = 0;
-	int maxLot = getMaxLot();
+	char *buff[maxLot];
 
 	while(1){
 		printf("Criteria for search:\n");
@@ -259,15 +265,30 @@ void search(){
 
 	getVal(lineSrch);
 
+	search(lineSrch,buff,numSrch,cri);
+
+
+
+	if(numSrch == 0)
+		printf("No records has been found\n");
+	else
+		printSrch(buff,numSrch);
+	getchar();
+	backToMenu();
+
+
+}
+
+void search(char lineSrch[],char *buff, int numSrch, int cri){
 	FILE* db = open('r');
 	if (db == NULL)
 		fprintf(stderr,"vehicleDB.dat is not found.");
 	else{
 		clearscr();
 
-		int numSrch = 0;
+
 		char currLine[MAXLINE],line[MAXLINE];
-		char *buff[maxLot];
+
 		while(fgets(line,MAXLINE,db)!=0){
 			int currCri = 0;
 			char* ptr;
@@ -289,47 +310,9 @@ void search(){
 				currCri++;
 			}
 		}
-		if(numSrch == 0)
-			printf("No records has been found\n");
-		else{
-			struct vehicle vehicleSrch[numSrch];
-			printf("Lot Number\tCar Model\t\tColor\t\tPlate Number\t\tOwner\t\t\tDate Impounded\n");
-			for (int i = 0; i < numSrch; i++){
-				char* ptr;
-				ptr = strtok(buff[i],",");
-				vehicleSrch[i].lotNum = atoi(ptr);
 
-				ptr = strtok(NULL,",");
-				strcpy(vehicleSrch[i].model,strdup(ptr));
-
-				ptr = strtok(NULL,",");
-				strcpy(vehicleSrch[i].color,strdup(ptr));
-
-				ptr = strtok(NULL,",");
-				strcpy(vehicleSrch[i].plateNum,strdup(ptr));
-
-				ptr = strtok(NULL,",");
-				strcpy(vehicleSrch[i].ownerName,strdup(ptr));
-
-				ptr = strtok(NULL,"\n");
-				strcpy(vehicleSrch[i].dateImpounded,strdup(ptr));
-
-				printf("%d\t\t%s\t\t%s\t\t%s\t\t%s\t\t%s\n",
-						vehicleSrch[i].lotNum,
-						vehicleSrch[i].model,
-						vehicleSrch[i].color,
-						vehicleSrch[i].plateNum,
-						vehicleSrch[i].ownerName,
-						vehicleSrch[i].dateImpounded);
-
-			}
-			printf("\n\nSearch returned %d results", numSrch);
-		}
 	}
 	fclose(db);
-	getchar();
-	backToMenu();
-
 }
 
 int getMaxLot(void){
@@ -399,4 +382,42 @@ void backToMenu(void){
 	if(toupper(choice) == 'Y')
 		mainMenu();
 
+}
+void modify(void){
+
+}
+
+void printSrch(char buff[], int numSrch){
+	struct vehicle vehicleSrch[numSrch];
+	printf("Lot Number\tCar Model\t\tColor\t\tPlate Number\t\tOwner\t\t\tDate Impounded\n");
+	for (int i = 0; i < numSrch; i++){
+		char* ptr;
+		ptr = strtok(buff[i],",");
+		vehicleSrch[i].lotNum = atoi(ptr);
+
+		ptr = strtok(NULL,",");
+		strcpy(vehicleSrch[i].model,strdup(ptr));
+
+		ptr = strtok(NULL,",");
+		strcpy(vehicleSrch[i].color,strdup(ptr));
+
+		ptr = strtok(NULL,",");
+		strcpy(vehicleSrch[i].plateNum,strdup(ptr));
+
+		ptr = strtok(NULL,",");
+		strcpy(vehicleSrch[i].ownerName,strdup(ptr));
+
+		ptr = strtok(NULL,"\n");
+		strcpy(vehicleSrch[i].dateImpounded,strdup(ptr));
+
+		printf("%d\t\t%s\t\t%s\t\t%s\t\t%s\t\t%s\n",
+				vehicleSrch[i].lotNum,
+				vehicleSrch[i].model,
+				vehicleSrch[i].color,
+				vehicleSrch[i].plateNum,
+				vehicleSrch[i].ownerName,
+				vehicleSrch[i].dateImpounded);
+
+	}
+	printf("\n\nSearch returned %d results", numSrch);
 }
