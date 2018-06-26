@@ -28,9 +28,9 @@ void getVal(char dest[]);
 void backToMenu(void);
 char* strupr(char* s);
 int getMaxLot();
-void printSrch(char buff[], int numSrch);
+void printSrch(char* buff[], int numSrch);
 void searchMenu();
-void search(char lineSrch[],char *buff, int numSrch, int cri);
+void search(char lineSrch[],char* buff[], int* numSrch, int cri);
 
 int main(void) {
 	mainMenu();
@@ -265,7 +265,7 @@ void searchMenu(){
 
 	getVal(lineSrch);
 
-	search(lineSrch,buff,numSrch,cri);
+	search(lineSrch,buff,&numSrch,cri);
 
 
 
@@ -279,7 +279,7 @@ void searchMenu(){
 
 }
 
-void search(char lineSrch[],char *buff, int numSrch, int cri){
+void search(char lineSrch[],char *buff[], int* numSrch, int cri){
 	FILE* db = open('r');
 	if (db == NULL)
 		fprintf(stderr,"vehicleDB.dat is not found.");
@@ -293,18 +293,18 @@ void search(char lineSrch[],char *buff, int numSrch, int cri){
 			int currCri = 0;
 			char* ptr;
 			strcpy(currLine,line);
-			buff[numSrch] = (char*)malloc(MAXLINE);
+			buff[*numSrch] = (char*)malloc(MAXLINE);
 
 			ptr = strtok(line,",");
 			if(strcmp(strdup(ptr),strupr(lineSrch)) == 0){
-				sprintf(buff[numSrch], "%s", currLine);
-				numSrch++;
+				sprintf(buff[*numSrch], "%s", currLine);
+				*numSrch = *numSrch + 1;
 			}
 			while(currCri < cri){
 				ptr = strtok(NULL,",");
 				if(strcmp(strdup(ptr),strupr(lineSrch)) == 0){
-					sprintf(buff[numSrch], "%s", currLine);
-					numSrch++;
+					sprintf(buff[*numSrch], "%s", currLine);
+					*numSrch = *numSrch + 1;
 					break;
 				}
 				currCri++;
@@ -319,7 +319,7 @@ int getMaxLot(void){
 	FILE* db = open('r');
 	int max = 0;
 	if(db == NULL)
-		fprintf(stderr,"vehicleDB.dat is not found.");
+		return max;
 	else{
 		char line[180];
 		char *ptr;
@@ -387,7 +387,7 @@ void modify(void){
 
 }
 
-void printSrch(char buff[], int numSrch){
+void printSrch(char* buff[], int numSrch){
 	struct vehicle vehicleSrch[numSrch];
 	printf("Lot Number\tCar Model\t\tColor\t\tPlate Number\t\tOwner\t\t\tDate Impounded\n");
 	for (int i = 0; i < numSrch; i++){
@@ -410,7 +410,7 @@ void printSrch(char buff[], int numSrch){
 		ptr = strtok(NULL,"\n");
 		strcpy(vehicleSrch[i].dateImpounded,strdup(ptr));
 
-		printf("%d\t\t%s\t\t%s\t\t%s\t\t%s\t\t%s\n",
+		printf("%d\t\t%s\t\t%s\t\t%s\t\t%s\t\t\t%s\n",
 				vehicleSrch[i].lotNum,
 				vehicleSrch[i].model,
 				vehicleSrch[i].color,
