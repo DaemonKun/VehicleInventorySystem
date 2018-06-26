@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #define MAXLINE 180
 
@@ -20,17 +21,17 @@ FILE* open(char param);
 void mainMenu(void);
 void list(void);
 void add(void);
-
 void modify(void); //unimplemented
-void delete(void); //unimplemented
+void deleteMenu(void); //unimplemented
 void clearscr(void);
-void getVal(char dest[]);
+void getVal(char* dest);
 void backToMenu(void);
 char* strupr(char* s);
 int getMaxLot();
 void printSrch(char* buff[], int numSrch);
 void searchMenu();
 void search(char lineSrch[],char* buff[], int* numSrch, int cri);
+void deleteFromFile(int pos, char update, char *updateItem, int cri);
 
 int main(void) {
 	mainMenu();
@@ -48,11 +49,13 @@ void mainMenu(void){
 	printf("1. Search Record\n");
 	printf("2. Add Record/s\n");
 	printf("3. List All Records\n");
+	printf("4. Update record\n");
+	printf("5. Delete record");
 	printf("Select the number of option(e.g 1 for Search): ");
 	fgets(lineOpt, sizeof(lineOpt), stdin);
 	do{
 		retVal = sscanf(lineOpt, "%d", &option);
-		if(retVal !=1 || option > 4){
+		if(retVal !=1 || option > 5){
 			printf("Please enter a valid option: ");
 			fgets(lineOpt, sizeof(lineOpt), stdin);
 
@@ -72,8 +75,16 @@ void mainMenu(void){
 		clearscr();
 		list();
 		break;
+	case 4:
+		clearscr();
+		modify();
+		break;
+	case 5:
+		clearscr();
+		deleteMenu();
+		break;
 	default:
-		printf("Error");
+		fprintf(stderr,"Error");
 	}
 
 }
@@ -81,8 +92,10 @@ void mainMenu(void){
 FILE *open(char param){
 	if (param == 'a')
 		return fopen("vehicleDB.dat","a");
-	else
+	else if(param == 'r')
 		return fopen("vehicleDB.dat","r");
+	else
+		return fopen("vehicleDB.dat","w");
 }
 
 void list(void){
@@ -301,14 +314,21 @@ void search(char lineSrch[],char *buff[], int* numSrch, int cri){
 				*numSrch = *numSrch + 1;
 			}
 			while(currCri < cri){
-				ptr = strtok(NULL,",");
+				if(currCri == 4)
+					ptr = strtok(NULL,"\n");
+
+				else
+					ptr = strtok(NULL,",");
+
 				if(strcmp(strdup(ptr),strupr(lineSrch)) == 0){
 					sprintf(buff[*numSrch], "%s", currLine);
 					*numSrch = *numSrch + 1;
 					break;
 				}
+
 				currCri++;
 			}
+
 		}
 
 	}
@@ -348,7 +368,7 @@ void clearscr(void)
 #endif
 }
 
-void getVal(char dest[]){
+void getVal(char* dest){
 	char *ptr;
 	fgets(dest,30,stdin);
 	ptr = strchr(dest, '\n');
@@ -384,9 +404,135 @@ void backToMenu(void){
 
 }
 void modify(void){
+	int cri = 0,numSrch = 0;
+	int maxLot = getMaxLot();
+	char criteria[2];
+	char lineSrch[MAXLINE];
+	char *buff[maxLot];
+	char *updateItem = (char*)malloc(MAXLINE);
+	int modCri;
+	struct vehicle vehicleMod;
+	while(1){
+		char* ptr;
+		char choice;
 
+		printf("Criteria to search:\n");
+		printf("A. Lot Number\n");
+		printf("B. Plate Number\n");
+		printf("Please select a valid criteria (e.g. A for Lot number): ");
+		getVal(criteria);
+
+		if(toupper(criteria[0]) == 'A'){
+			clearscr();
+			printf("Please input the Lot number to be searched: ");
+		}
+		else if(toupper(criteria[0]) == 'B'){
+			cri = 3;
+			clearscr();
+			printf("Please input the Plate Number to be searched: ");
+		}
+		else{
+			clearscr();
+			continue;
+		}
+
+		getVal(lineSrch);
+		search(lineSrch,buff,&numSrch,cri);
+		if (numSrch == 0){
+			printf("Program can't find the record to be updated. Returning to search...");
+			getchar();
+			clearscr();
+			continue;
+		}
+
+
+		ptr = strtok(buff[0],",");
+		vehicleMod.lotNum = atoi(ptr);
+
+		ptr = strtok(NULL,",");
+		strcpy(vehicleMod.model,strdup(ptr));
+		ptr = strtok(NULL,",");
+		strcpy(vehicleMod.color,strdup(ptr));
+		ptr = strtok(NULL,",");
+		strcpy(vehicleMod.plateNum,strdup(ptr));
+		ptr = strtok(NULL,",");
+		strcpy(vehicleMod.ownerName,strdup(ptr));
+		ptr = strtok(NULL,",");
+		strcpy(vehicleMod.dateImpounded,strdup(ptr));
+
+
+		while(1){
+			printf("Is Lot number %d with plate number %s to be modified (Y/N): "
+					,vehicleMod.lotNum, vehicleMod.plateNum);
+			getVal(&choice);
+
+			if(toupper(choice) == 'Y' ||
+					toupper(choice) == 'N')
+				break;
+			else
+				printf("Invalid choice \n");
+
+		}
+		if(toupper(choice) == 'Y'){
+			clearscr();
+			break;
+		}
+		else if(toupper(choice) == 'N'){
+			clearscr();
+			continue;
+		}
+	}
+	while(1){
+		printf("What will you be updating?\n");
+		printf("A. Car Model\n");
+		printf("B. Color\n");
+		printf("C. Plate Number\n");
+		printf("D. Owner Name\n");
+		printf("E. Impounding Date\n");
+		printf("Selection (e.g. A for car model: ");
+		getVal(criteria);
+
+		if(toupper(criteria[0]) == 'A'){
+			clearscr();
+			modCri = 1;
+			printf("Please input the new Car Model: ");
+			break;
+		}
+		else if(toupper(criteria[0]) == 'B'){
+			modCri = 2;
+			clearscr();
+			printf("Please input the new Color: ");
+			break;
+		}
+		else if(toupper(criteria[0]) == 'C'){
+			modCri = 3;
+			clearscr();
+			printf("Please input the new Plate Number: ");
+			break;
+		}
+		else if(toupper(criteria[0]) == 'D'){
+			modCri = 4;
+			clearscr();
+			printf("Please input the new Owner Name: ");
+			break;
+		}
+		else if(toupper(criteria[0]) == 'E'){
+			modCri = 5;
+			clearscr();
+			printf("Please input the new Impounding Date: ");
+			break;
+		}
+		else{
+			clearscr();
+			continue;
+
+		}
+
+	}
+	getVal(updateItem);
+	deleteFromFile(vehicleMod.lotNum,'Y',updateItem,modCri);
+	free(updateItem);
 }
-
 void printSrch(char* buff[], int numSrch){
 	struct vehicle vehicleSrch[numSrch];
 	printf("Lot Number\tCar Model\t\tColor\t\tPlate Number\t\tOwner\t\t\tDate Impounded\n");
@@ -420,4 +566,84 @@ void printSrch(char* buff[], int numSrch){
 
 	}
 	printf("\n\nSearch returned %d results", numSrch);
+}
+
+void deleteFromFile(int pos, char update, char* updateItem, int cri){
+	int currPos = 1;
+	FILE* db = open('r');
+	FILE* tempDB = fopen("temp.dat","w");
+	char line[MAXLINE],currLine[MAXLINE];
+
+	if (db == NULL || tempDB == NULL){
+		printf("Error");
+		return;
+	}
+
+	if(update == 'N'){
+		while(fgets(line,MAXLINE,db)!=0){
+			if(currPos != pos){
+				fputs(line,tempDB);
+			}
+			currPos++;
+		}
+	}
+	else if(update == 'Y'){
+		while(fgets(line,MAXLINE,db)!=0){
+			if(currPos != pos){
+				fputs(line,tempDB);
+			}
+			else{
+				int i = 1;
+				char* ptr;
+				char* buff = (char*)malloc(MAXLINE);
+				char* end = (char*)malloc(2);
+				memset(buff,'\0',MAXLINE);
+				memset(end,'\0',2);
+				strcpy(end,",");
+				strcpy(currLine,line);
+
+				ptr = strtok(line,",");
+				if(cri == 0){
+					strcat(buff,strdup(updateItem));
+					strcat(buff,",");
+				}
+				else{
+					strcat(buff,strdup(ptr));
+					strcat(buff,end);
+				}
+
+				while(i < 6){
+					if (i == 5){
+						ptr = strtok(NULL,"\n");
+						strcpy(end,"\n");
+					}
+
+					else
+						ptr = strtok(NULL,",");
+
+					if(i == cri){
+						strcat(buff,strdup(updateItem));
+						strcat(buff,end);
+					}
+					else{
+						strcat(buff,strdup(ptr));
+						strcat(buff,end);
+					}
+					i++;
+				}
+				strcat(buff,"\n");
+				fputs(buff,tempDB);
+
+			}
+			currPos++;
+		}
+	}
+	fclose(db);
+	fclose(tempDB);
+	remove("vehicleDB.dat");
+	rename("temp.dat","vehicleDB.dat");
+}
+
+void deleteMenu(void){
+
 }
