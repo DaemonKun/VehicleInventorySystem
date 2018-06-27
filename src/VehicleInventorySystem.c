@@ -98,7 +98,7 @@ FILE *open(char param){
 	else if(param == 'r')
 		return fopen("vehicleDB.dat","r");
 	else
-		return fopen("vehicleDB.dat","wb");
+		return fopen("temp.dat","wb");
 }
 
 int listMenu(void){
@@ -599,7 +599,7 @@ void printSrch(char* buff[], int numSrch){
 int deleteFromFile(int pos, char update, char* updateItem, int cri){
 	int currPos = 1;
 	FILE* db = open('r');
-	FILE* tempDB = fopen("temp.dat","w");
+	FILE* tempDB = open("wb");
 	char line[MAXLINE],currLine[MAXLINE];
 
 	if (db == NULL || tempDB == NULL){
