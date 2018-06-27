@@ -17,21 +17,23 @@ struct vehicle{
 };
 
 
-FILE* open(char param);
+
 void mainMenu(void);
-void list(void);
-void add(void);
-void modify(void); //unimplemented
-void deleteMenu(void); //unimplemented
+int searchMenu(void);
+int listMenu(void);
+int addMenu(void);
+int modifyMenu(void);
+int deleteMenu(void);
+FILE* open(char param);
 void clearscr(void);
 void getVal(char* dest);
-void backToMenu(void);
+int backToMenu(void);
 char* strupr(char* s);
 int getMaxLot();
 void printSrch(char* buff[], int numSrch);
-void searchMenu();
-void search(char lineSrch[],char* buff[], int* numSrch, int cri);
-void deleteFromFile(int pos, char update, char *updateItem, int cri);
+
+int search(char lineSrch[],char* buff[], int* numSrch, int cri);
+int deleteFromFile(int pos, char update, char *updateItem, int cri);
 
 int main(void) {
 	mainMenu();
@@ -39,53 +41,54 @@ int main(void) {
 }
 
 void mainMenu(void){
-	int option;
-	char lineOpt[MAXLINE];
 	int retVal;
-	clearscr();
-	printf("\t\t\t\t=====Vehicle Inventory System=====\n\n\n");
-	printf("Choose from the following options\n");
 
-	printf("1. Search Record\n");
-	printf("2. Add Record/s\n");
-	printf("3. List All Records\n");
-	printf("4. Update record\n");
-	printf("5. Delete record");
-	printf("Select the number of option(e.g 1 for Search): ");
-	fgets(lineOpt, sizeof(lineOpt), stdin);
 	do{
-		retVal = sscanf(lineOpt, "%d", &option);
-		if(retVal !=1 || option > 5){
-			printf("Please enter a valid option: ");
-			fgets(lineOpt, sizeof(lineOpt), stdin);
+		char option[2];
+		clearscr();
+		retVal = 1;
 
+		printf("\t\t\t\t=====Vehicle Inventory System=====\n\n\n");
+		printf("Choose from the following options\n");
+
+		printf("1. Search Record\n");
+		printf("2. Add Record/s\n");
+		printf("3. List All Records\n");
+		printf("4. Update record\n");
+		printf("5. Delete record\n");
+		printf("6. Exit Program\n");
+		printf("Select the number of option(e.g 1 for Search): ");
+		getVal(option);
+		switch(option[0]){
+		case '1':
+			clearscr();
+			retVal = searchMenu();
+			break;
+		case '2':
+			clearscr();
+			retVal = addMenu();
+			break;
+		case '3':
+			clearscr();
+			retVal = listMenu();
+			break;
+		case '4':
+			clearscr();
+			retVal = modifyMenu();
+			break;
+		case '5':
+			clearscr();
+			retVal = deleteMenu();
+			break;
+		case '6':
+			retVal = 0;
+			break;
+		default:
+			printf("Not a valid option\n");
 		}
-		fflush(stdin);
-	}while(retVal!=1);
-	switch(option){
-	case 1:
-		clearscr();
-		searchMenu();
-		break;
-	case 2:
-		clearscr();
-		add();
-		break;
-	case 3:
-		clearscr();
-		list();
-		break;
-	case 4:
-		clearscr();
-		modify();
-		break;
-	case 5:
-		clearscr();
-		deleteMenu();
-		break;
-	default:
-		fprintf(stderr,"Error");
-	}
+	}while(retVal == 1);
+	if(retVal != -1)
+		printf("Program is exiting. Thank you for using...\n");
 
 }
 
@@ -95,15 +98,18 @@ FILE *open(char param){
 	else if(param == 'r')
 		return fopen("vehicleDB.dat","r");
 	else
-		return fopen("vehicleDB.dat","w");
+		return fopen("vehicleDB.dat","wb");
 }
 
-void list(void){
+int listMenu(void){
 	int maxLot = getMaxLot();
 	struct vehicle vehicleList[maxLot];
 	FILE* db = open('r');
-	if(db == NULL)
-		printf("vehicleDB.dat is not found.");
+	if(db == NULL){
+		fprintf(stderr,"vehicleDB.dat is not found. Program will now exit...\n");
+		getchar();
+		return -1;
+	}
 	else{
 		char line[MAXLINE];
 		char *ptr;
@@ -137,10 +143,11 @@ void list(void){
 
 	fclose(db);
 
-	printf("\t\t\t\t\t\t=====ALL CARS ON IMPOUND=====\n\n");
-	printf("Lot Number\tCar Model\t\tColor\t\tPlate Number\t\tOwner\t\t\tDate Impounded\n");
+	printf("\t\t\t\t\t=====ALL CARS ON IMPOUND=====\n\n");
+	printf("%-20s %-30s %-15s %-15s %-30s %-15s\n","Lot Number"
+			,"Car Model","Color","Plate Number","Owner Name","Date Impounded");
 	for(int i = 0; i < maxLot; i++){
-		printf("%d\t\t%s\t\t%s\t\t%s\t\t%s\t\t%s\n",
+		printf("%-20d %-30s %-15s %-15s %-30s %-15s\n",
 				vehicleList[i].lotNum,
 				vehicleList[i].model,
 				vehicleList[i].color,
@@ -149,11 +156,11 @@ void list(void){
 				vehicleList[i].dateImpounded);
 	}
 	getchar();
-	backToMenu();
+	return backToMenu();
 
 }
 
-void add(void){
+int addMenu(void){
 
 	int currMax = getMaxLot();
 	int numRec = 1,retVal;
@@ -173,8 +180,11 @@ void add(void){
 	FILE *db = open('a');
 	struct vehicle vehicleAdd[numRec];
 
-	if(db == NULL)
-		fprintf(stderr,"File not found");
+	if(db == NULL){
+		fprintf(stderr,"vehicleDB.dat is not found. Program will now exit...\n");
+		return -1;
+	}
+
 	else{
 		for(int i = 0; i < numRec; i++){
 			char *buffer = (char*)malloc(MAXLINE);
@@ -213,11 +223,11 @@ void add(void){
 	fclose(db);
 	printf("Records has been successfully added.\n");
 	getchar();
-	backToMenu();
+	return backToMenu();
 
 }
 
-void searchMenu(){
+int searchMenu(){
 
 	int cri = 0,numSrch = 0;;
 	int maxLot = getMaxLot();
@@ -278,24 +288,29 @@ void searchMenu(){
 
 	getVal(lineSrch);
 
-	search(lineSrch,buff,&numSrch,cri);
+	int retVal = search(lineSrch,buff,&numSrch,cri);
 
-
+	if(retVal == -1){
+		return -1;
+	}
 
 	if(numSrch == 0)
 		printf("No records has been found\n");
 	else
 		printSrch(buff,numSrch);
 	getchar();
-	backToMenu();
+	return backToMenu();
 
 
 }
 
-void search(char lineSrch[],char *buff[], int* numSrch, int cri){
+int search(char lineSrch[],char *buff[], int* numSrch, int cri){
 	FILE* db = open('r');
-	if (db == NULL)
-		fprintf(stderr,"vehicleDB.dat is not found.");
+	if (db == NULL){
+		fprintf(stderr,"vehicleDB.dat is not found. Program will now exit...\n");
+		getchar();
+		return -1;
+	}
 	else{
 		clearscr();
 
@@ -333,13 +348,14 @@ void search(char lineSrch[],char *buff[], int* numSrch, int cri){
 
 	}
 	fclose(db);
+	return EXIT_SUCCESS;
 }
 
 int getMaxLot(void){
 	FILE* db = open('r');
 	int max = 0;
 	if(db == NULL)
-		return max;
+		return 0;
 	else{
 		char line[180];
 		char *ptr;
@@ -387,23 +403,24 @@ char* strupr(char* s)
 
 	return s;
 }
-void backToMenu(void){
+int backToMenu(void){
 
-	char choice;
+	char choice[2];
 	while(1){
 		clearscr();
 		printf("Would you like to go back to the main menu(Y/N): ");
-		scanf("%c",&choice);
-		fflush(stdin);
-		if(toupper(choice) == 'Y' || toupper(choice) == 'N')
+		getVal(choice);
+		if(toupper(choice[0]) == 'Y' || toupper(choice[0]) == 'N')
 			break;
 
 	}
-	if(toupper(choice) == 'Y')
-		mainMenu();
+	if(toupper(choice[0]) == 'Y')
+		return 1;
+	else
+		return EXIT_SUCCESS;
 
 }
-void modify(void){
+int modifyMenu(void){
 	int cri = 0,numSrch = 0;
 	int maxLot = getMaxLot();
 	char criteria[2];
@@ -437,7 +454,10 @@ void modify(void){
 		}
 
 		getVal(lineSrch);
-		search(lineSrch,buff,&numSrch,cri);
+		int retVal = search(lineSrch,buff,&numSrch,cri);
+		if(retVal == -1){
+			return -1;
+		}
 		if (numSrch == 0){
 			printf("Program can't find the record to be updated. Returning to search...");
 			getchar();
@@ -462,7 +482,7 @@ void modify(void){
 
 
 		while(1){
-			printf("Is Lot number %d with plate number %s to be modified (Y/N): "
+			printf("Is Lot number %d with plate number %s to be updated (Y/N): "
 					,vehicleMod.lotNum, vehicleMod.plateNum);
 			getVal(&choice);
 
@@ -495,31 +515,31 @@ void modify(void){
 		if(toupper(criteria[0]) == 'A'){
 			clearscr();
 			modCri = 1;
-			printf("Please input the new Car Model: ");
+			printf("Please input the new Car Model(Previous Data:%s): ",vehicleMod.model);
 			break;
 		}
 		else if(toupper(criteria[0]) == 'B'){
 			modCri = 2;
 			clearscr();
-			printf("Please input the new Color: ");
+			printf("Please input the new Color(Previous Data:%s): ",vehicleMod.color);
 			break;
 		}
 		else if(toupper(criteria[0]) == 'C'){
 			modCri = 3;
 			clearscr();
-			printf("Please input the new Plate Number: ");
+			printf("Please input the new Plate Number(Previous Data:%s): ",vehicleMod.plateNum);
 			break;
 		}
 		else if(toupper(criteria[0]) == 'D'){
 			modCri = 4;
 			clearscr();
-			printf("Please input the new Owner Name: ");
+			printf("Please input the new Owner Name(Previous Data:%s): ",vehicleMod.ownerName);
 			break;
 		}
 		else if(toupper(criteria[0]) == 'E'){
 			modCri = 5;
 			clearscr();
-			printf("Please input the new Impounding Date: ");
+			printf("Please input the new Impounding Date(Previous Data:%s): ",vehicleMod.dateImpounded);
 			break;
 		}
 		else{
@@ -530,12 +550,20 @@ void modify(void){
 
 	}
 	getVal(updateItem);
-	deleteFromFile(vehicleMod.lotNum,'Y',updateItem,modCri);
+	strupr(updateItem);
+	int retVal = deleteFromFile(vehicleMod.lotNum,'Y',updateItem,modCri);
+	if(retVal == -1){
+		return -1;
+	}
 	free(updateItem);
+	printf("Record has been updated\n");
+	getchar();
+	return backToMenu();
 }
 void printSrch(char* buff[], int numSrch){
 	struct vehicle vehicleSrch[numSrch];
-	printf("Lot Number\tCar Model\t\tColor\t\tPlate Number\t\tOwner\t\t\tDate Impounded\n");
+	printf("%-20s %-30s %-15s %-15s %-30s %-15s\n","Lot Number"
+			,"Car Model","Color","Plate Number","Owner Name","Date Impounded");
 	for (int i = 0; i < numSrch; i++){
 		char* ptr;
 		ptr = strtok(buff[i],",");
@@ -556,7 +584,7 @@ void printSrch(char* buff[], int numSrch){
 		ptr = strtok(NULL,"\n");
 		strcpy(vehicleSrch[i].dateImpounded,strdup(ptr));
 
-		printf("%d\t\t%s\t\t%s\t\t%s\t\t%s\t\t\t%s\n",
+		printf("%-20d %-30s %-15s %-15s %-30s %-15s\n",
 				vehicleSrch[i].lotNum,
 				vehicleSrch[i].model,
 				vehicleSrch[i].color,
@@ -568,15 +596,16 @@ void printSrch(char* buff[], int numSrch){
 	printf("\n\nSearch returned %d results", numSrch);
 }
 
-void deleteFromFile(int pos, char update, char* updateItem, int cri){
+int deleteFromFile(int pos, char update, char* updateItem, int cri){
 	int currPos = 1;
 	FILE* db = open('r');
 	FILE* tempDB = fopen("temp.dat","w");
 	char line[MAXLINE],currLine[MAXLINE];
 
 	if (db == NULL || tempDB == NULL){
-		printf("Error");
-		return;
+		fprintf(stderr,"vehicleDB.dat is not found. Program will now exit...\n");
+		getchar();
+		return -1;
 	}
 
 	if(update == 'N'){
@@ -631,7 +660,6 @@ void deleteFromFile(int pos, char update, char* updateItem, int cri){
 					}
 					i++;
 				}
-				strcat(buff,"\n");
 				fputs(buff,tempDB);
 
 			}
@@ -642,8 +670,95 @@ void deleteFromFile(int pos, char update, char* updateItem, int cri){
 	fclose(tempDB);
 	remove("vehicleDB.dat");
 	rename("temp.dat","vehicleDB.dat");
+	return EXIT_SUCCESS;
+
 }
 
-void deleteMenu(void){
+int deleteMenu(void){
+	int cri = 0,numSrch = 0;
+	int maxLot = getMaxLot();
+	char criteria[2];
+	char lineSrch[MAXLINE];
+	char *buff[maxLot];
+	struct vehicle vehicleDelete;
+	while(1){
+		char* ptr;
+		char choice;
 
+		printf("Criteria to search:\n");
+		printf("A. Lot Number\n");
+		printf("B. Plate Number\n");
+		printf("Please select a valid criteria (e.g. A for Lot number): ");
+		getVal(criteria);
+
+		if(toupper(criteria[0]) == 'A'){
+			clearscr();
+			printf("Please input the Lot number to be searched: ");
+		}
+		else if(toupper(criteria[0]) == 'B'){
+			cri = 3;
+			clearscr();
+			printf("Please input the Plate Number to be searched: ");
+		}
+		else{
+			clearscr();
+			continue;
+		}
+
+		getVal(lineSrch);
+		int retVal = search(lineSrch,buff,&numSrch,cri);
+		if(retVal == -1)
+			return -1;
+
+		if (numSrch == 0){
+			printf("Program can't find the record to be updated. Returning to search...");
+			getchar();
+			clearscr();
+			continue;
+		}
+
+
+		ptr = strtok(buff[0],",");
+		vehicleDelete.lotNum = atoi(ptr);
+
+		ptr = strtok(NULL,",");
+		strcpy(vehicleDelete.model,strdup(ptr));
+		ptr = strtok(NULL,",");
+		strcpy(vehicleDelete.color,strdup(ptr));
+		ptr = strtok(NULL,",");
+		strcpy(vehicleDelete.plateNum,strdup(ptr));
+		ptr = strtok(NULL,",");
+		strcpy(vehicleDelete.ownerName,strdup(ptr));
+		ptr = strtok(NULL,",");
+		strcpy(vehicleDelete.dateImpounded,strdup(ptr));
+
+
+		while(1){
+			printf("Is Lot number %d with plate number %s to be deleted (Y/N): "
+					,vehicleDelete.lotNum, vehicleDelete.plateNum);
+			getVal(&choice);
+
+			if(toupper(choice) == 'Y' ||
+					toupper(choice) == 'N')
+				break;
+			else
+				printf("Invalid choice \n");
+
+		}
+		if(toupper(choice) == 'Y'){
+			clearscr();
+			break;
+		}
+		else if(toupper(choice) == 'N'){
+			clearscr();
+			continue;
+		}
+	}
+	int retVal = deleteFromFile(vehicleDelete.lotNum,'N',NULL,0);
+	if(retVal == -1){
+		return -1;
+	}
+	printf("Record has been deleted\n");
+	getchar();
+	return backToMenu();
 }
